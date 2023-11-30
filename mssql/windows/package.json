@@ -1,0 +1,19 @@
+{
+    "description": "The Packify package manager",
+    "scope": "instance",
+    "dependencies": [],
+    "files": {
+        "installation": ["bootstrap/install.sql"],
+        "removal": ["uninstall/remove.sql"],
+        "update": null
+    },
+    "parameters": {
+        "targets": {
+            "database": {
+                "method": "substitution",
+                "value": "Database?",
+                "default": "Packify"
+            }
+        }
+    }
+}
