@@ -24,7 +24,7 @@ EXECUTE AS LOGIN = @targetLogin;
             1;
     END;
 
-    -- create the packify with the provided name
+    -- create the packify database with the provided name
     CREATE DATABASE
         [Database!];
     GO
