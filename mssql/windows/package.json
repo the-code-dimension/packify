@@ -3,7 +3,10 @@
     "scope": "instance",
     "dependencies": [],
     "files": {
-        "installation": ["bootstrap/install.sql"],
+        "installation": [
+            "bootstrap/1-create_login.sql",
+            "bootstrap/2-create_database.sql"
+        ],
         "removal": ["uninstall/remove.sql"],
         "update": null
     },
@@ -11,7 +14,7 @@
         "targets": {
             "database": {
                 "method": "substitution",
-                "value": "Database?",
+                "value": "Database!",
                 "default": "Packify"
             }
         }
