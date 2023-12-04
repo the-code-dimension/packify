@@ -5,7 +5,9 @@
     "files": {
         "installation": [
             "bootstrap/1-create_login.sql",
-            "bootstrap/2-create_database.sql"
+            "bootstrap/2-create_database.sql",
+            "bootstrap/3-create_schemas.sql",
+            "bootstrap/4-http.sql"
         ],
         "removal": ["uninstall/remove.sql"],
         "update": null
