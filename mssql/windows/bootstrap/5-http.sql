@@ -16,10 +16,6 @@ GO
     FROM NVARCHAR(MAX) NOT NULL;
     GO
 
-    CREATE RULE HTTP.Rule_JsonType AS
-        ISJSON(@JsonType) = 1;
-    GO
-
     CREATE TYPE HTTP.Response AS TABLE (
         [StatusCode]    INT,
         [StatusText]    NVARCHAR(MAX),
