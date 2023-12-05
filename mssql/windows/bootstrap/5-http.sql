@@ -210,7 +210,7 @@ GO
         DECLARE
             @statusCode     INT,
             @statusText     NVARCHAR(4000),
-            @allHeaders     NVARCHAR(4000),
+            @allHeaders     NVARCHAR(MAX),
             @headersJson    HTTP.JsonType,
             @responseBody   NVARCHAR(MAX);
         
@@ -257,10 +257,20 @@ GO
         END;
 
         -- get all of the headers and split them out into a JSON object
+        DECLARE @tbvResponseHeaders TABLE (
+            [Headers]   NVARCHAR(MAX)
+        );
+        INSERT INTO
+            @tbvResponseHeaders
         EXEC @hresult = sp_OAMethod
             @httpObject,
-            'getAllResponseHeaders',
-            @allHeaders OUTPUT;
+            'getAllResponseHeaders';
+        SET @allHeaders = (
+            SELECT TOP 1
+                [Headers]
+            FROM
+                @tbvResponseHeaders
+        );
         IF @hresult != 0 BEGIN
             SET @errorType = 'HTTP_GET_ALL_HEADERS_FAILED';
 
