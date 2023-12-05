@@ -7,8 +7,8 @@ EXECUTE AS LOGIN = @targetLogin;
 GO
 
     CREATE TYPE HTTP.HeaderList AS TABLE (
-        [Name]          NVARCHAR(MAX),
-        [Value]         NVARCHAR(MAX)
+        [Name]          NVARCHAR(MAX) NOT NULL,
+        [Value]         NVARCHAR(MAX) NOT NULL
     );
     GO
 
@@ -17,19 +17,20 @@ GO
     GO
 
     CREATE TYPE HTTP.Response AS TABLE (
-        [StatusCode]    INT,
-        [StatusText]    NVARCHAR(MAX),
+        [StatusCode]    INT NOT NULL,
+        [StatusText]    NVARCHAR(MAX) NOT NULL,
         [Headers]       HTTP.JsonType,
-        [Body]          NVARCHAR(MAX)
+        [Body]          NVARCHAR(MAX) NOT NULL
     );
     GO
 
     -- performs a GET request to a provided remote URL
     CREATE PROCEDURE HTTP.Get
-        @Uri        NVARCHAR(MAX),
-        @Body       NVARCHAR(4000)              = NULL,
-        @Timeout    INT,
-        @Headers    HTTP.HeaderList READONLY
+        @Uri            NVARCHAR(MAX),
+        @Body           NVARCHAR(4000)              = NULL,
+        @Timeout        INT,
+        @Headers        HTTP.HeaderList READONLY,
+        @ResponseOut    HTTP.JsonType   OUTPUT
     AS BEGIN
         SET NOCOUNT ON;
 
@@ -206,7 +207,7 @@ GO
         END;
 
         -- get the results into an HTTP.Response instance
-        DECLARE @response AS HTTP.Response;
+        DECLARE @responseData AS HTTP.Response;
         DECLARE
             @statusCode     INT,
             @statusText     NVARCHAR(4000),
@@ -338,7 +339,7 @@ GO
             @tbvResult;
 
         INSERT INTO
-            @response
+            @responseData
         VALUES (
             @statusCode,
             @statusText,
@@ -350,11 +351,51 @@ GO
         EXEC @hresult = sp_OADestroy
             @httpObject;
         
-        -- return the response instance
+        -- return the response as a json object
+        SET @ResponseOut = (
+            SELECT
+                *
+            FROM
+                @responseData
+            FOR
+                JSON PATH,
+                WITHOUT_ARRAY_WRAPPER
+        );
+    END;
+    GO
+
+    -- converts HTTP response json to a selectable table matching
+    -- the schema of HTTP.Response
+    CREATE FUNCTION HTTP.ConvertResponse (
+        @responseJson   NVARCHAR(MAX)
+    ) RETURNS @response TABLE (
+        [StatusCode]    INT,
+        [StatusText]    NVARCHAR(MAX),
+        [Headers]       HTTP.JsonType,
+        [Body]          NVARCHAR(MAX)
+    ) AS BEGIN
+        INSERT INTO
+            @response
         SELECT
             *
-        FROM
-            @response;
+        FROM (
+            SELECT
+                [key],
+                [value]
+            FROM
+                OPENJSON(@responseJson)
+        ) AS a
+        PIVOT (
+            MAX([value])
+            FOR [key] IN (
+                [StatusCode],
+                [StatusText],
+                [Headers],
+                [Body]
+            )
+        ) AS PivotTable;
+
+        RETURN;
     END;
     GO
 
