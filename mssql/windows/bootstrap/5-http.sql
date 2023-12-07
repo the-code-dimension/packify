@@ -12,14 +12,13 @@ GO
     );
     GO
 
-    CREATE TYPE HTTP.JsonType
-    FROM NVARCHAR(MAX) NOT NULL;
-    GO
-
     CREATE TYPE HTTP.Response AS TABLE (
         [StatusCode]    INT NOT NULL,
         [StatusText]    NVARCHAR(MAX) NOT NULL,
-        [Headers]       HTTP.JsonType,
+        [Headers]       NVARCHAR(MAX) NOT NULL
+            CHECK (
+                ISJSON([Headers]) = 1
+            ),
         [Body]          NVARCHAR(MAX) NOT NULL
     );
     GO
@@ -30,7 +29,7 @@ GO
         @Body           NVARCHAR(4000)              = NULL,
         @Timeout        INT,
         @Headers        HTTP.HeaderList READONLY,
-        @ResponseOut    HTTP.JsonType   OUTPUT
+        @ResponseOut    NVARCHAR(MAX)   OUTPUT
     AS BEGIN
         SET NOCOUNT ON;
 
@@ -212,7 +211,7 @@ GO
             @statusCode     INT,
             @statusText     NVARCHAR(4000),
             @allHeaders     NVARCHAR(MAX),
-            @headersJson    HTTP.JsonType,
+            @headersJson    NVARCHAR(MAX),
             @responseBody   NVARCHAR(MAX);
         
         -- get the response status code
@@ -371,11 +370,16 @@ GO
     ) RETURNS @response TABLE (
         [StatusCode]    INT,
         [StatusText]    NVARCHAR(MAX),
-        [Headers]       HTTP.JsonType,
+        [Headers]       NVARCHAR(MAX),
         [Body]          NVARCHAR(MAX)
     ) AS BEGIN
+        /*
+         * convert the response JSON into an HTTP.Response instance. while we
+         * can't directly return this, it evalutates our check constraints
+         */
+        DECLARE @httpResponse AS HTTP.Response;
         INSERT INTO
-            @response
+            @httpResponse
         SELECT
             *
         FROM (
@@ -394,6 +398,14 @@ GO
                 [Body]
             )
         ) AS PivotTable;
+
+        -- copy the HTTP.Response into our return table
+        INSERT INTO
+            @response
+        SELECT
+            *
+        FROM
+            @httpResponse;
 
         RETURN;
     END;
