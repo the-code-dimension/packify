@@ -1,6 +1,6 @@
 /*
  * Packify - Package Manager
- * Installation Script for mssql/windows
+ * Installation script for mssql/windows
  * 
  * Author: will
  * Created: 2023-11-27
